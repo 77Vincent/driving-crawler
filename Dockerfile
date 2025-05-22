@@ -18,7 +18,13 @@ RUN go build -o main .
 # Use a minimal base image for the final image
 FROM alpine:latest AS final
 
-RUN apk add --no-cache chromium
+RUN apk add --no-cache \
+      chromium \
+      nss \
+      freetype \
+      harfbuzz \
+      ttf-freefont \
+      ca-certificates
 
 # Set the working directory
 WORKDIR /app

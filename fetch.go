@@ -5,6 +5,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/chromedp/chromedp"
 	"log"
+	"os"
 	"strings"
 	"time"
 )
@@ -15,15 +16,27 @@ const (
 )
 
 func fetch() bool {
-	// create chrome instance
-	ctx, cancel := chromedp.NewContext(
-		context.Background(),
-		// chromedp.WithDebugf(log.Printf),
-	)
+	rootCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	// create a timeout
-	ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
+	// find Chrome binary
+	chromePath := os.Getenv("CHROME_PATH")
+	if chromePath == "" {
+		chromePath = "/usr/bin/chromium-browser"
+	}
+
+	// create allocator with necessary flags
+	allocCtx, allocCancel := chromedp.NewExecAllocator(rootCtx,
+		chromedp.ExecPath(chromePath),
+		chromedp.Headless,
+		chromedp.DisableGPU,
+		chromedp.Flag("no-sandbox", true),
+		chromedp.Flag("disable-dev-shm-usage", true),
+	)
+	defer allocCancel()
+
+	// create chrome instance
+	ctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
 	// navigate to a page, wait for an element, click
@@ -42,7 +55,8 @@ func fetch() bool {
 				chromedp.WaitVisible(`body table input[value="2週後＞"]`),
 				chromedp.OuterHTML(`body`, &output, chromedp.ByQuery),
 			); err != nil {
-				log.Fatal(err)
+				log.Printf("Error at the %d fetch: %s\n", i, err)
+				return false
 			}
 		} else {
 			if err := chromedp.Run(ctx,
@@ -51,7 +65,8 @@ func fetch() bool {
 				chromedp.Sleep(2*time.Second),
 				chromedp.OuterHTML(`body`, &output, chromedp.ByQuery),
 			); err != nil {
-				log.Fatal(err)
+				log.Printf("Error at the %d fetch: %s\n", i, err)
+				return false
 			}
 		}
 
