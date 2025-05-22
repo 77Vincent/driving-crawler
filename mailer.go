@@ -6,15 +6,18 @@ import (
 )
 
 const (
-	src  = "wojiaotianqi@gmail.com"
-	dest = "wojiaotianqi@gmail.com"
+	src   = "wojiaotianqi@gmail.com"
+	dest  = "wojiaotianqi@gmail.com"
+	dest2 = "tianqi.wen@fastretailing.com"
+	dest3 = "yenan.rong@fastretailing.com"
+	dest4 = "yenanrong0426@gmail.com"
 )
 
 func notify() {
 	// Email details
 	from := src                    // Replace with your email
 	password := "ayvhkjtazrfxuebd" // app password
-	to := []string{dest, src}      // Sending to yourself
+	to := []string{dest, dest2, dest3, dest4}
 
 	// SMTP server configuration (Gmail example)
 	smtpHost := "smtp.gmail.com"
