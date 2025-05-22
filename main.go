@@ -10,13 +10,13 @@ import (
 var counter int
 
 func main() {
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(25 * time.Second)
 
 	for {
 		select {
 		case <-ticker.C:
 			counter++
-			log.Println("Fetching... the", counter, "times")
+			log.Println("fetch the", counter, "times")
 
 			if fetch() {
 				log.Println("Found!")
