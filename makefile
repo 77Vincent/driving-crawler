@@ -8,3 +8,4 @@ log:
 	docker logs -f myapp
 stop:
 	docker stop myapp
+	docker rm myapp
