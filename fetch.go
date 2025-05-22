@@ -1,60 +1,77 @@
 package main
 
 import (
+	"context"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/chromedp/chromedp"
 	"log"
-	"net/http"
 	"strings"
+	"time"
 )
 
 const (
-	target = "#008A2B"
+	initUrl = "https://www.keishicho-gto.metro.tokyo.lg.jp/keishicho-u/reserve/offerList_detail.action?tempSeq=363"
+	target  = "#008A2B" // the green color
 )
 
 func fetch() bool {
-	url := "https://www.keishicho-gto.metro.tokyo.lg.jp/keishicho-u/reserve/offerList_detail?tempSeq=363"
+	// create chrome instance
+	ctx, cancel := chromedp.NewContext(
+		context.Background(),
+		// chromedp.WithDebugf(log.Printf),
+	)
+	defer cancel()
 
-	// Create a new HTTP client
-	client := &http.Client{}
+	// create a timeout
+	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
 
-	// Create a new request
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		panic(err)
+	// navigate to a page, wait for an element, click
+	var (
+		found bool
+	)
 
-	}
-	// Set the User-Agent header to mimic a browser
-	headers := map[string]string{}
-	headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-	for key, value := range headers {
-		req.Header.Set(key, value)
-	}
-	// Send the request
-	res, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer res.Body.Close()
-	// Check the response status code
-	if res.StatusCode != http.StatusOK {
-		panic("Failed to fetch the page: " + res.Status)
-	}
+	// run 4 times
+	for i := 0; i < 5; i++ {
+		var output string
 
-	// Load the HTML document
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	found := false
-	doc.Find("#height_auto_29の国･地域以外の方で、住民票のない方").Each(func(i int, s *goquery.Selection) {
-		// Find the text of the element
-		v := s.Text()
-		// Print the text
-		if strings.Contains(v, target) {
-			found = true
+		// the first time is different
+		if i == 0 {
+			if err := chromedp.Run(ctx,
+				chromedp.Navigate(initUrl),
+				chromedp.WaitVisible(`body table input[value="2週後＞"]`),
+				chromedp.OuterHTML(`body`, &output, chromedp.ByQuery),
+			); err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			if err := chromedp.Run(ctx,
+				chromedp.WaitVisible(`body table input[value="2週後＞"]`),
+				chromedp.Click(`input[value="2週後＞"]`, chromedp.NodeVisible),
+				chromedp.Sleep(2*time.Second),
+				chromedp.OuterHTML(`body`, &output, chromedp.ByQuery),
+			); err != nil {
+				log.Fatal(err)
+			}
 		}
-	})
 
-	return found
+		doc, err := goquery.NewDocumentFromReader(strings.NewReader(output))
+		if err != nil {
+			log.Fatal(err)
+		}
+		doc.Find("#height_auto_29の国･地域以外の方で、住民票のない方 td").Each(func(i int, s *goquery.Selection) {
+			// Find the text of the element
+			v := s.Text()
+			// Print the text
+			if strings.Contains(v, target) {
+				found = true
+			}
+		})
+
+		if found {
+			return true
+		}
+	}
+
+	return false
 }

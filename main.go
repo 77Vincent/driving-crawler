@@ -1,3 +1,5 @@
+// Command click is a chromedp example demonstrating how to use a selector to
+// click on an element.
 package main
 
 import (
@@ -5,17 +7,24 @@ import (
 	"time"
 )
 
+var counter int
+
 func main() {
-	// write a boilerplate code to crawl a website
-	log.Println("start watching")
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(15 * time.Second)
+
 	for {
 		select {
 		case <-ticker.C:
-			log.Println("start finding")
+			counter++
+			log.Println("Fetching... the", counter, "times")
+
 			if fetch() {
+				log.Println("Found!")
 				notify()
+				continue
 			}
+
+			log.Println("not found, waiting for the next fetch...")
 		}
 	}
 }
