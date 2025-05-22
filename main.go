@@ -10,7 +10,7 @@ import (
 var counter int
 
 func main() {
-	ticker := time.NewTicker(25 * time.Second)
+	ticker := time.NewTicker(30 * time.Second)
 
 	for {
 		select {
